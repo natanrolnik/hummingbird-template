@@ -1,30 +1,40 @@
-import ArgumentParser
+import Configuration
 import Hummingbird
 import Logging
 
 {{^hbLambda}}
+/// The main entry point of the application.
+///
+/// Configuration can be provided via command-line arguments or environment variables.
+/// Command-line arguments take precedence over environment variables.
+///
+/// ## Supported configuration
+///
+/// - `--host` / `HTTP_HOST`: Hostname or IP to bind to (default: `127.0.0.1`)
+/// - `--port` / `HTTP_PORT`: Port number to listen on (default: `8080`)
+/// - `--log-level` / `LOG_LEVEL`: Logging level - See `Logger.Level` for the possible values (default: `info`)
+///
+/// ## Examples
+///
+/// Using command-line arguments:
+/// ```bash
+/// swift run {{hbExecutableName}} --host 0.0.0.0 --port 3000 --log-level debug
+/// ```
+///
+/// Using environment variables:
+/// ```bash
+/// HTTP_HOST=0.0.0.0 HTTP_PORT=3000 LOG_LEVEL=debug swift run {{hbExecutableName}}
+/// ```
 @main
-struct AppCommand: AsyncParsableCommand, AppArguments {
-    @Option(name: .shortAndLong)
-    var hostname: String = "127.0.0.1"
-
-    @Option(name: .shortAndLong)
-    var port: Int = 8080
-
-    @Option(name: .shortAndLong)
-    var logLevel: Logger.Level?
-
-    func run() async throws {
-        let app = try await buildApplication(self)
+struct App {
+    static func main() async throws {
+        let configReader = ConfigReader(providers: [
+            CommandLineArgumentsProvider(),
+            EnvironmentVariablesProvider().prefixKeys(with: "http"),
+            EnvironmentVariablesProvider()
+        ])
+        let app = try await buildApplication(configReader: configReader)
         try await app.runService()
-    }
-}
-
-/// Extend `Logger.Level` so it can be used as an argument
-extension Logger.Level: @retroactive ExpressibleByArgument {
-    public init?(argument: String) {
-        guard let value = Self(rawValue: argument) else { return nil }
-        self = value
     }
 }
 {{/hbLambda}}
@@ -36,4 +46,4 @@ struct Lambda {
         try await lambda.runService()
     }
 }
-{{^hbLambda}}
+{{/hbLambda}}

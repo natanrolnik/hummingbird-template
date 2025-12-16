@@ -1,6 +1,7 @@
 {{#hbLambda}}
 import AWSLambdaEvents
 {{/hbLambda}}
+import Configuration
 import Hummingbird
 {{#hbLambda}}
 import HummingbirdLambda
@@ -10,39 +11,21 @@ import Logging
 import OpenAPIHummingbird
 {{/hbOpenAPI}}
 
-{{^hbLambda}}
-/// Application arguments protocol. We use a protocol so we can call
-/// `buildApplication` inside Tests as well as in the App executable. 
-/// Any variables added here also have to be added to `App` in App.swift and 
-/// `TestArguments` in AppTest.swift
-package protocol AppArguments {
-    var hostname: String { get }
-    var port: Int { get }
-    var logLevel: Logger.Level? { get }
-}
-{{/hbLambda}}
-
 // Request context used by {{^hbLambda}}application{{/hbLambda}}{{#hbLambda}}lambda<{{hbLambdaType}}Request>{{/hbLambda}}
 typealias AppRequestContext = {{^hbLambda}}BasicRequestContext{{/hbLambda}}{{#hbLambda}}BasicLambdaRequestContext<{{hbLambdaType}}Request>{{/hbLambda}}
 
 {{^hbLambda}}
 ///  Build application
-/// - Parameter arguments: application arguments
-func buildApplication(_ arguments: some AppArguments) async throws -> some ApplicationProtocol {
+/// - Parameter configReader: configuration reader
+func buildApplication(configReader: ConfigReader) async throws -> some ApplicationProtocol {
 {{/hbLambda}}
 {{#hbLambda}}
 ///  Build AWS Lambda function
 func buildLambda() async throws -> {{hbLambdaType}}LambdaFunction<RouterResponder<AppRequestContext>> {
 {{/hbLambda}}
-    let environment = Environment()
     let logger = {
         var logger = Logger(label: "{{hbPackageName}}")
-        logger.logLevel = 
-{{^hbLambda}}
-            arguments.logLevel ??
-{{/hbLambda}}
-            environment.get("LOG_LEVEL").flatMap { Logger.Level(rawValue: $0) } ??
-            .info
+        logger.logLevel = configReader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
         return logger
     }()
     let router = try buildRouter()
@@ -50,7 +33,10 @@ func buildLambda() async throws -> {{hbLambdaType}}LambdaFunction<RouterResponde
     let app = Application(
         router: router,
         configuration: .init(
-            address: .hostname(arguments.hostname, port: arguments.port),
+            address: .hostname(
+                configReader.string(forKey: "host", default: "127.0.0.1"),
+                port: configReader.int(forKey: "port", default: 8080)
+            ),
             serverName: "{{hbPackageName}}"
         ),
         logger: logger
