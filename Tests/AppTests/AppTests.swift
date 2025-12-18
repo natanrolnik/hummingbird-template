@@ -1,3 +1,4 @@
+import Configuration
 import Hummingbird
 {{^hbLambda}}
 import HummingbirdTesting
@@ -12,17 +13,15 @@ import XCTest
 
 final class AppTests: XCTestCase {
 {{^hbLambda}}
-    struct TestArguments: AppArguments {
-        let hostname = "127.0.0.1"
-        let port = 0
-        let logLevel: Logger.Level? = .trace
-    }
-{{/hbLambda}}
-
-{{^hbLambda}}
     func testApp() async throws {
-        let args = TestArguments()
-        let app = try await buildApplication(args)
+        let reader = ConfigReader(providers: [
+            InMemoryProvider(name: nil, values: [
+                "host": "127.0.0.1",
+                "port": "0",
+                "log.level": "trace"
+            ])
+        ])
+        let app = try await buildApplication(reader: reader)
         try await app.test(.router) { client in
             try await client.execute(uri: "/", method: .get) { response in
                 XCTAssertEqual(response.body, ByteBuffer(string: "Hello!"))
@@ -32,7 +31,12 @@ final class AppTests: XCTestCase {
 {{/hbLambda}}
 {{#hbLambda}}
     func testLambda() async throws {
-        let lambda = try await buildLambda()
+        let reader = ConfigReader(providers: [
+            InMemoryProvider([
+                "log.level": "trace"
+            ])
+        ])
+        let lambda = try await buildLambda(reader: reader)
         try await lambda.test() { client in
             try await client.execute(uri: "/", method: .get) { response in
                 XCTAssertEqual(response.body, "Hello!")

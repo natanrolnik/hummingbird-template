@@ -16,29 +16,24 @@ typealias AppRequestContext = {{^hbLambda}}BasicRequestContext{{/hbLambda}}{{#hb
 
 {{^hbLambda}}
 ///  Build application
-/// - Parameter configReader: configuration reader
-func buildApplication(configReader: ConfigReader) async throws -> some ApplicationProtocol {
+/// - Parameter reader: configuration reader
+func buildApplication(reader: ConfigReader) async throws -> some ApplicationProtocol {
 {{/hbLambda}}
 {{#hbLambda}}
 ///  Build AWS Lambda function
-func buildLambda() async throws -> {{hbLambdaType}}LambdaFunction<RouterResponder<AppRequestContext>> {
+/// - Parameter reader: configuration reader
+func buildLambda(reader: ConfigReader) async throws -> {{hbLambdaType}}LambdaFunction<RouterResponder<AppRequestContext>> {
 {{/hbLambda}}
     let logger = {
         var logger = Logger(label: "{{hbPackageName}}")
-        logger.logLevel = configReader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
+        logger.logLevel = reader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
         return logger
     }()
     let router = try buildRouter()
 {{^hbLambda}}
     let app = Application(
         router: router,
-        configuration: .init(
-            address: .hostname(
-                configReader.string(forKey: "host", default: "127.0.0.1"),
-                port: configReader.int(forKey: "port", default: 8080)
-            ),
-            serverName: "{{hbPackageName}}"
-        ),
+        configuration: ApplicationConfiguration(reader: reader),
         logger: logger
     )
     return app
