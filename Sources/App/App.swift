@@ -9,7 +9,7 @@ struct App {
         let reader = ConfigReader(providers: [
             CommandLineArgumentsProvider(),
             EnvironmentVariablesProvider(),
-            InMemoryProvider([
+            InMemoryProvider(values: [
                 "server.name": "{{hbPackageName}}"
             ])
         ])

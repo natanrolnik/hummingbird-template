@@ -7,39 +7,47 @@ import HummingbirdTesting
 import HummingbirdLambdaTesting
 {{/hbLambda}}
 import Logging
-import XCTest
+import Testing
 
 @testable import {{hbExecutableName}}
 
-final class AppTests: XCTestCase {
 {{^hbLambda}}
-    func testApp() async throws {
-        let reader = ConfigReader(providers: [
-            InMemoryProvider(name: nil, values: [
-                "host": "127.0.0.1",
-                "port": "0",
-                "log.level": "trace"
-            ])
-        ])
+private let reader = ConfigReader(providers: [
+    InMemoryProvider(values: [
+        "host": "127.0.0.1",
+        "port": "0",
+        "log.level": "trace"
+    ])
+])
+{{/hbLambda}}
+{{#hbLambda}}
+private let reader = ConfigReader(providers: [
+    InMemoryProvider(values: [
+        "log.level": "trace"
+    ])
+])
+{{/hbLambda}}
+
+@Suite
+struct AppTests {
+{{^hbLambda}}
+    @Test
+    func app() async throws {
         let app = try await buildApplication(reader: reader)
         try await app.test(.router) { client in
             try await client.execute(uri: "/", method: .get) { response in
-                XCTAssertEqual(response.body, ByteBuffer(string: "Hello!"))
+                #expect(response.body == ByteBuffer(string: "Hello!"))
             }
         }
     }
 {{/hbLambda}}
 {{#hbLambda}}
-    func testLambda() async throws {
-        let reader = ConfigReader(providers: [
-            InMemoryProvider([
-                "log.level": "trace"
-            ])
-        ])
+    @Test
+    func lambda() async throws {
         let lambda = try await buildLambda(reader: reader)
         try await lambda.test() { client in
             try await client.execute(uri: "/", method: .get) { response in
-                XCTAssertEqual(response.body, "Hello!")
+                #expect(response.body == "Hello!")
             }
         }
     }
