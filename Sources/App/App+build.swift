@@ -33,7 +33,7 @@ func buildLambda(reader: ConfigReader) async throws -> {{hbLambdaType}}LambdaFun
 {{^hbLambda}}
     let app = Application(
         router: router,
-        configuration: ApplicationConfiguration(reader: reader),
+        configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
         logger: logger
     )
     return app
