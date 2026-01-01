@@ -1,30 +1,23 @@
-import ArgumentParser
+import Configuration
 import Hummingbird
 import Logging
 
 {{^hbLambda}}
 @main
-struct AppCommand: AsyncParsableCommand, AppArguments {
-    @Option(name: .shortAndLong)
-    var hostname: String = "127.0.0.1"
-
-    @Option(name: .shortAndLong)
-    var port: Int = 8080
-
-    @Option(name: .shortAndLong)
-    var logLevel: Logger.Level?
-
-    func run() async throws {
-        let app = try await buildApplication(self)
+struct App {
+    static func main() async throws {
+        // Application will read configuration from the following in the order listed
+        // Command line, Environment variables, dotEnv file, defaults provided in memory 
+        let reader = try await ConfigReader(providers: [
+            CommandLineArgumentsProvider(),
+            EnvironmentVariablesProvider(),
+            EnvironmentVariablesProvider(environmentFilePath: ".env", allowMissing: true),
+            InMemoryProvider(values: [
+                "http.serverName": "{{hbPackageName}}"
+            ])
+        ])
+        let app = try await buildApplication(reader: reader)
         try await app.runService()
-    }
-}
-
-/// Extend `Logger.Level` so it can be used as an argument
-extension Logger.Level: @retroactive ExpressibleByArgument {
-    public init?(argument: String) {
-        guard let value = Self(rawValue: argument) else { return nil }
-        self = value
     }
 }
 {{/hbLambda}}
@@ -32,8 +25,11 @@ extension Logger.Level: @retroactive ExpressibleByArgument {
 @main
 struct Lambda {
     static func main() async throws {
-        let lambda = try await buildLambda()
+        let reader = ConfigReader(providers: [
+            EnvironmentVariablesProvider()
+        ])
+        let lambda = try await buildLambda(reader: reader)
         try await lambda.runService()
     }
 }
-{{^hbLambda}}
+{{/hbLambda}}

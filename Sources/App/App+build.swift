@@ -1,6 +1,7 @@
 {{#hbLambda}}
 import AWSLambdaEvents
 {{/hbLambda}}
+import Configuration
 import Hummingbird
 {{#hbLambda}}
 import HummingbirdLambda
@@ -10,49 +11,29 @@ import Logging
 import OpenAPIHummingbird
 {{/hbOpenAPI}}
 
-{{^hbLambda}}
-/// Application arguments protocol. We use a protocol so we can call
-/// `buildApplication` inside Tests as well as in the App executable. 
-/// Any variables added here also have to be added to `App` in App.swift and 
-/// `TestArguments` in AppTest.swift
-package protocol AppArguments {
-    var hostname: String { get }
-    var port: Int { get }
-    var logLevel: Logger.Level? { get }
-}
-{{/hbLambda}}
-
 // Request context used by {{^hbLambda}}application{{/hbLambda}}{{#hbLambda}}lambda<{{hbLambdaType}}Request>{{/hbLambda}}
 typealias AppRequestContext = {{^hbLambda}}BasicRequestContext{{/hbLambda}}{{#hbLambda}}BasicLambdaRequestContext<{{hbLambdaType}}Request>{{/hbLambda}}
 
 {{^hbLambda}}
 ///  Build application
-/// - Parameter arguments: application arguments
-func buildApplication(_ arguments: some AppArguments) async throws -> some ApplicationProtocol {
+/// - Parameter reader: configuration reader
+func buildApplication(reader: ConfigReader) async throws -> some ApplicationProtocol {
 {{/hbLambda}}
 {{#hbLambda}}
 ///  Build AWS Lambda function
-func buildLambda() async throws -> {{hbLambdaType}}LambdaFunction<RouterResponder<AppRequestContext>> {
+/// - Parameter reader: configuration reader
+func buildLambda(reader: ConfigReader) async throws -> {{hbLambdaType}}LambdaFunction<RouterResponder<AppRequestContext>> {
 {{/hbLambda}}
-    let environment = Environment()
     let logger = {
         var logger = Logger(label: "{{hbPackageName}}")
-        logger.logLevel = 
-{{^hbLambda}}
-            arguments.logLevel ??
-{{/hbLambda}}
-            environment.get("LOG_LEVEL").flatMap { Logger.Level(rawValue: $0) } ??
-            .info
+        logger.logLevel = reader.string(forKey: "log.level", as: Logger.Level.self, default: .info)
         return logger
     }()
     let router = try buildRouter()
 {{^hbLambda}}
     let app = Application(
         router: router,
-        configuration: .init(
-            address: .hostname(arguments.hostname, port: arguments.port),
-            serverName: "{{hbPackageName}}"
-        ),
+        configuration: ApplicationConfiguration(reader: reader.scoped(to: "http")),
         logger: logger
     )
     return app

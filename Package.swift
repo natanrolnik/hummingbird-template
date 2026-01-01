@@ -1,4 +1,4 @@
-// swift-tools-version:6.0
+// swift-tools-version:6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "{{hbPackageName}}",
 {{^hbLambda}}
-    platforms: [.macOS(.v14), .iOS(.v17), .tvOS(.v17)],
+    platforms: [.macOS(.v15), .iOS(.v18), .tvOS(.v18)],
 {{/hbLambda}}
 {{#hbLambda}}
     platforms: [.macOS(.v15)],
@@ -19,7 +19,7 @@ let package = Package(
 {{#hbLambda}}
         .package(url: "https://github.com/hummingbird-project/hummingbird-lambda.git", from: "2.0.0"),
 {{/hbLambda}}
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+        .package(url: "https://github.com/apple/swift-configuration.git", from: "1.0.0", traits: [.defaults, "CommandLineArguments"]),
 {{#hbOpenAPI}}
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.7.0"),
@@ -29,7 +29,7 @@ let package = Package(
     targets: [
         .executableTarget(name: "{{hbExecutableName}}",
             dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "Configuration", package: "swift-configuration"),
                 .product(name: "Hummingbird", package: "hummingbird"),
 {{#hbLambda}}
                 .product(name: "HummingbirdLambda", package: "hummingbird-lambda"),

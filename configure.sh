@@ -158,6 +158,7 @@ if [[ "$READ_INPUT_RETURN" == "yes" ]]; then
     export hbLambdaType="APIGatewayV2"
     export hbExecutableName="App"
 else
+    export hbLambda=""
     echo -n "Enter your executable name: "
     read_input_with_default "App"
     export hbExecutableName=$READ_INPUT_RETURN
@@ -171,12 +172,16 @@ read_yes_no "no"
 if [[ "$READ_INPUT_RETURN" == "yes" ]]; then
     export hbOpenAPI="yes"
     mkdir -p "$TARGET_FOLDER"/Sources/AppAPI
+else
+    export hbOpenAPI=""
 fi
 
 echo -n "Include Visual Studio Code snippets: "
 read_yes_no "no"
 if [[ "$READ_INPUT_RETURN" == "yes" ]]; then
     export hbVSCodeSnippets="yes"
+else
+    export hbVSCodeSnippets=""
 fi
 
 echo ""
@@ -184,7 +189,7 @@ echo ""
 pushd $TEMPLATE_FOLDER > /dev/null
 
 # Root level files
-FILES=$(find . -maxdepth 1 ! -type d ! -name "*.sh" ! -name LICENSE)
+FILES=$(find . -maxdepth 1 ! -type d ! -name "*.sh" ! -name LICENSE ! -name ".DS_Store")
 run_mustache "$FILES" "$TARGET_FOLDER"
 # Files in Sources and Tests folder
 FILES=$(find Sources Tests .github .vscode/hummingbird.code-snippets ! -type d)
