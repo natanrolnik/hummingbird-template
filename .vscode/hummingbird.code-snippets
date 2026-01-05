@@ -3,7 +3,7 @@
     "Endpoint": {
         "prefix": "endpoint",
         "body": [
-            "@Sendable func ${1:functionName}(request: Request, context: some RequestContext) async throws -> ${2:returnValue} {",
+            "func ${1:functionName}(request: Request, context: some RequestContext) async throws -> ${2:returnValue} {",
             "\t${3:statements}",
             "}"
         ],
